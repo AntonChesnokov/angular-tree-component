@@ -21,6 +21,7 @@ export class TreeModel implements ITreeModel, OnDestroy {
   private _selectedLeafNodeIds = signal<IDTypeDictionary>({});
   private _activeNodeIds = signal<IDTypeDictionary>({});
   private _hiddenNodeIds = signal<IDTypeDictionary>({});
+  private _hiddenNodes:TreeNode[] = [];
   private _focusedNodeId = signal<IDType>(null);
   private _virtualRoot = signal<TreeNode>(undefined);
 
@@ -52,10 +53,14 @@ export class TreeModel implements ITreeModel, OnDestroy {
   }
 
   get hiddenNodes(): TreeNode[] {
-    const ids = this._hiddenNodeIds();
-    const nodes = Object.keys(ids)
-        .filter((id) => ids[id])
-        .map((id) => this.getNodeById(id));
+    /*const ids = this._hiddenNodeIds();
+    var ids2 = Object.keys(ids).filter((id) => ids[id]);
+    //const nodes = ids2.map((id) => this.getNodeById(id));
+    var nodes=[];
+    for(var i=0;i<ids2.length;i++){
+      nodes.push(this.getNodeById(ids2[i]));
+    }*/
+    const nodes = this._hiddenNodes;
     return nodes.filter(Boolean);
   }
 
@@ -373,8 +378,10 @@ export class TreeModel implements ITreeModel, OnDestroy {
     }
 
     const ids = {};
-    this.roots.forEach((node) => this._filterNode(ids, node, filterFn, autoShow));
+    var hiddenNodes=[];
+    this.roots.forEach((node) => this._filterNode(ids, node, filterFn, autoShow,hiddenNodes));
     this._hiddenNodeIds.set(ids);
+    this._hiddenNodes = hiddenNodes;
     this.fireEvent({ eventName: TREE_EVENTS.changeFilter });
   }
 
@@ -480,14 +487,14 @@ export class TreeModel implements ITreeModel, OnDestroy {
   }
 
   // private methods
-  private _filterNode(ids, node, filterFn, autoShow) {
+  private _filterNode(ids, node, filterFn, autoShow,hiddenNodes) {
     // if node passes function then it's visible
     let isVisible = filterFn(node);
 
     if (node.children) {
       // if one of node's children passes filter then this node is also visible
       node.children.forEach((child) => {
-        if (this._filterNode(ids, child, filterFn, autoShow)) {
+        if (this._filterNode(ids, child, filterFn, autoShow, hiddenNodes)) {
           isVisible = true;
         }
       });
@@ -496,6 +503,7 @@ export class TreeModel implements ITreeModel, OnDestroy {
     // mark node as hidden
     if (!isVisible) {
       ids[node.id] = true;
+      hiddenNodes.push(node);
     }
     // auto expand parents to make sure the filtered nodes are visible
     if (autoShow && isVisible) {
@@ -534,6 +542,16 @@ export class TreeModel implements ITreeModel, OnDestroy {
 
   private _setActiveNodeMulti(node, value) {
     this._activeNodeIds.update(ids => ({...ids, [node.id]: value}));
+  }
+
+  generatedIds:any={};
+  uuid() {
+    var res = Math.floor(Math.random() * 10000000000000);
+    while(this.generatedIds[res]){
+      res = Math.floor(Math.random() * 10000000000000);
+    }
+    this.generatedIds[res]=true;
+    return res;
   }
 
 }

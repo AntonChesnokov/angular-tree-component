@@ -70,7 +70,7 @@ export class TreeNode implements ITreeNode {
 
   constructor(public data: any, public parent: TreeNode, public treeModel: TreeModel, index: number) {
     if (this.id === undefined || this.id === null) {
-      this.id = uuid();
+      this.id = this.treeModel.uuid();
     } // Make sure there's a unique id without overriding existing ids to work with immutable data structures
     this.index = index;
 
@@ -424,8 +424,7 @@ export class TreeNode implements ITreeNode {
     this.children = this.getField('children')
       .map((c, index) => new TreeNode(c, this, this.treeModel, index));
   }
+  
 }
 
-function uuid() {
-  return Math.floor(Math.random() * 10000000000000);
-}
+
